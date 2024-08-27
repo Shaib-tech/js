@@ -32,10 +32,41 @@ const result = addTwoNumbers(3,4)
 
 function loginUserMessage (username = "Shaib"){
     if(username === undefined ){ // <=This syntax and this => "(!username)" syntax, both conditions are same.  
-        console.log("Please enter a username");
+        // console.log("Please enter a username");
         return
     }
     return `${username} Just logged in`
 
 }
-console.log(loginUserMessage("Zayed")) // If you don't pass argument then its gives you undefined.
+// console.log(loginUserMessage("Zayed")) // If you don't pass argument then its gives you undefined.
+
+function calculateCartPrice (val1, val2, ...num1){
+    return num1 
+
+}
+// console.log(calculateCartPrice(200 , 400 , 500))
+
+
+const user = {
+    name : "Shaib",
+    price : 199
+}
+
+function handleObject (anyobject){
+console.log(`Username is ${anyobject.name} and price is ${anyobject.price}`);
+
+}
+// handleObject(user)
+
+handleObject({
+    name : "Zayed",
+    price : 199
+})
+
+////////////// Function in Array /////////////
+
+const myNewArray = [100,400,500,800]
+function returnSecondValue (getArray){
+    return getArray[2]
+}
+console.log(returnSecondValue(myNewArray));
