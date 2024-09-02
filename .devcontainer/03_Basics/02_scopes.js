@@ -23,9 +23,9 @@ function one (){
     function two (){
         const website = "Youtube"
         
-        // console.log(username);
+        console.log(username);
     }
-    // console.log(website);
+    console.log(website);
     
     two()
 }
@@ -47,13 +47,13 @@ if (true){
 
 /// In the idustry, you can see two type of function syntax.
 
-console.log(addone(5))
+// console.log(addone(5))
 function addone(num){
     return num + 1
 }
 
 //////////////////////////
-addtwo(5)
+// addtwo(5)
 
 const addtwo = function(num){
     return num + 2
