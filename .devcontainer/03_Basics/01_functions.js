@@ -71,3 +71,10 @@ console.log(`Username is ${anyobject.name} and price is ${anyobject.price}`);
 //     return getArray[2]
 // }
 // console.log(returnSecondValue(myNewArray));
+
+///// Function Syntax ///////
+
+(function chai (){
+    console.log("DB is coneect");
+    
+} )()
