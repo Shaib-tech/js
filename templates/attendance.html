@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - Attendance & Salary Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5">
+            <i class="fas fa-calendar-check text-success me-3"></i>
+            Attendance Management
+        </h1>
+        <p class="lead text-muted">Mark and track employee attendance</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#markAttendanceModal">
+            <i class="fas fa-plus me-2"></i>
+            Mark Attendance
+        </button>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Shift Timings
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <h6 class="text-warning">First Shift</h6>
+                        <p class="mb-1"><strong>10:00 AM - 02:00 PM</strong></p>
+                        <small class="text-muted">
+                            Punctual: 10:00-10:15<br>
+                            Grace: 10:15-10:30<br>
+                            Half-day: After 11:00
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-info">Second Shift</h6>
+                        <p class="mb-1"><strong>02:00 PM - 07:00 PM</strong></p>
+                        <small class="text-muted">
+                            Punctual: 14:00-14:15<br>
+                            Grace: 14:15-14:30<br>
+                            Half-day: After 15:00
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    Filter Attendance
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="filterDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="filterDate">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="filterEmployee" class="form-label">Employee</label>
+                        <select class="form-select" id="filterEmployee">
+                            <option value="">All Employees</option>
+                            {% for emp_id, emp_data in employees.items() %}
+                            <option value="{{ emp_id }}">{{ emp_data.name }} ({{ emp_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary btn-sm" onclick="filterAttendance()">
+                        <i class="fas fa-search me-1"></i>
+                        Filter
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Attendance Records
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div id="attendanceTableContainer">
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times display-1 text-muted mb-3"></i>
+                <h5 class="text-muted">No attendance records found</h5>
+                <p class="text-muted">Use the filter above to view attendance records or mark new attendance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark Attendance Modal -->
+<div class="modal fade" id="markAttendanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="markAttendanceForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="attendanceEmpId" class="form-label">Employee *</label>
+                        <select class="form-select" id="attendanceEmpId" required>
+                            <option value="">Select Employee</option>
+                            {% for emp_id, emp_data in employees.items() %}
+                            <option value="{{ emp_id }}" data-shift="{{ emp_data.shift_type }}">
+                                {{ emp_data.name }} ({{ emp_id }}) - {{ emp_data.shift_type }} Shift
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="attendanceDate" class="form-label">Date *</label>
+                        <input type="date" class="form-control" id="attendanceDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="arrivalTime" class="form-label">Arrival Time *</label>
+                        <input type="time" class="form-control" id="arrivalTime" required>
+                    </div>
+                    <div id="attendancePreview" class="alert alert-info" style="display: none;">
+                        <h6 class="alert-heading">Attendance Preview</h6>
+                        <p class="mb-0" id="previewText"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <span class="spinner-border spinner-border-sm me-2" style="display: none;"></span>
+                        <span class="button-text">Mark Attendance</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Summary Modal -->
+<div class="modal fade" id="summaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Monthly Attendance Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <select class="form-select" id="summaryEmployee">
+                            <option value="">Select Employee</option>
+                            {% for emp_id, emp_data in employees.items() %}
+                            <option value="{{ emp_id }}">{{ emp_data.name }} ({{ emp_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="summaryYear">
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="summaryMonth">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary" onclick="loadSummary()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="summaryContent">
+                    <div class="text-center py-4">
+                        <p class="text-muted">Select employee and month to view summary</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set today's date as default
+    document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+    
+    // Set current month and year
+    const now = new Date();
+    document.getElementById('summaryYear').value = now.getFullYear();
+    document.getElementById('summaryMonth').value = now.getMonth() + 1;
+
+    // Preview attendance status when time changes
+    document.getElementById('arrivalTime').addEventListener('change', updateAttendancePreview);
+    document.getElementById('attendanceEmpId').addEventListener('change', updateAttendancePreview);
+
+    function updateAttendancePreview() {
+        const empSelect = document.getElementById('attendanceEmpId');
+        const timeInput = document.getElementById('arrivalTime');
+        const preview = document.getElementById('attendancePreview');
+        const previewText = document.getElementById('previewText');
+
+        if (!empSelect.value || !timeInput.value) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        const selectedOption = empSelect.selectedOptions[0];
+        const shift = selectedOption.dataset.shift;
+        const arrivalTime = timeInput.value;
+
+        const status = calculateAttendanceStatus(shift, arrivalTime);
+        const statusClass = getStatusClass(status);
+
+        preview.className = `alert alert-${statusClass}`;
+        previewText.innerHTML = `
+            <strong>Status:</strong> ${status}<br>
+            <strong>Shift:</strong> ${shift}<br>
+            <strong>Arrival:</strong> ${arrivalTime}
+        `;
+        preview.style.display = 'block';
+    }
+
+    function calculateAttendanceStatus(shift, arrivalTime) {
+        const [hours, minutes] = arrivalTime.split(':').map(Number);
+        const arrivalMinutes = hours * 60 + minutes;
+
+        let punctualStart, punctualEnd, graceEnd, halfDayStart;
+
+        if (shift === 'First') {
+            punctualStart = 10 * 60; // 10:00
+            punctualEnd = 10 * 60 + 15; // 10:15
+            graceEnd = 10 * 60 + 30; // 10:30
+            halfDayStart = 11 * 60; // 11:00
+        } else {
+            punctualStart = 14 * 60; // 14:00
+            punctualEnd = 14 * 60 + 15; // 14:15
+            graceEnd = 14 * 60 + 30; // 14:30
+            halfDayStart = 15 * 60; // 15:00
+        }
+
+        if (arrivalMinutes >= punctualStart && arrivalMinutes <= punctualEnd) {
+            return 'Punctual';
+        } else if (arrivalMinutes <= graceEnd) {
+            return 'Grace';
+        } else if (arrivalMinutes >= halfDayStart) {
+            return 'Half-day';
+        } else {
+            return 'Late';
+        }
+    }
+
+    function getStatusClass(status) {
+        switch (status) {
+            case 'Punctual': return 'success';
+            case 'Grace': return 'warning';
+            case 'Late': return 'danger';
+            case 'Half-day': return 'info';
+            default: return 'secondary';
+        }
+    }
+
+    // Mark attendance form submission
+    document.getElementById('markAttendanceForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.querySelector('.button-text').textContent;
+        
+        showLoading(submitBtn);
+        
+        const formData = {
+            emp_id: document.getElementById('attendanceEmpId').value,
+            date: document.getElementById('attendanceDate').value,
+            arrival_time: document.getElementById('arrivalTime').value
+        };
+        
+        try {
+            const response = await fetch('/mark_attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('markAttendanceModal')).hide();
+                filterAttendance(); // Refresh the attendance table
+            } else {
+                showAlert(result.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('An error occurred while marking attendance.', 'danger');
+        } finally {
+            hideLoading(submitBtn, originalText);
+        }
+    });
+
+    function filterAttendance() {
+        // This would load attendance records based on filters
+        // For now, show a message
+        const container = document.getElementById('attendanceTableContainer');
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading attendance records...</p>
+            </div>
+        `;
+        
+        // Simulate loading
+        setTimeout(() => {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-muted">Attendance filtering functionality will be implemented here.</p>
+                </div>
+            `;
+        }, 1000);
+    }
+
+    function clearFilters() {
+        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('filterEmployee').value = '';
+        filterAttendance();
+    }
+
+    async function loadSummary() {
+        const empId = document.getElementById('summaryEmployee').value;
+        const year = document.getElementById('summaryYear').value;
+        const month = document.getElementById('summaryMonth').value;
+        
+        if (!empId) {
+            showAlert('Please select an employee', 'warning');
+            return;
+        }
+        
+        const container = document.getElementById('summaryContent');
+        container.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+        
+        try {
+            const response = await fetch(`/get_attendance_summary/${empId}/${year}/${month}`);
+            const summary = await response.json();
+            
+            container.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <h3 class="text-success">${summary.punctual}</h3>
+                                <p class="mb-0">Punctual</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-warning">
+                            <div class="card-body">
+                                <h3 class="text-warning">${summary.grace}</h3>
+                                <p class="mb-0">Grace</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-danger">
+                            <div class="card-body">
+                                <h3 class="text-danger">${summary.late}</h3>
+                                <p class="mb-0">Late</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <h3 class="text-info">${summary.half_day}</h3>
+                                <p class="mb-0">Half Day</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Summary</h6>
+                                <p class="mb-1"><strong>Total Working Days:</strong> ${summary.total_working_days}</p>
+                                <p class="mb-1"><strong>Present Days:</strong> ${summary.punctual + summary.grace + summary.late}</p>
+                                <p class="mb-1"><strong>Half Days:</strong> ${summary.half_day}</p>
+                                <p class="mb-0"><strong>Absent Days:</strong> ${summary.absent}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            container.innerHTML = '<div class="alert alert-danger">Error loading summary</div>';
+        }
+    }
+
+    // Show attendance summary
+    function showSummary() {
+        const modal = new bootstrap.Modal(document.getElementById('summaryModal'));
+        modal.show();
+    }
+
+    // Add summary button to header
+    document.addEventListener('DOMContentLoaded', function() {
+        const headerButtons = document.querySelector('.col-md-4.text-end');
+        headerButtons.innerHTML += `
+            <button class="btn btn-info btn-lg ms-2" onclick="showSummary()">
+                <i class="fas fa-chart-bar me-2"></i>
+                Summary
+            </button>
+        `;
+    });
+
+    // Clear form when modal is hidden
+    document.getElementById('markAttendanceModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('markAttendanceForm').reset();
+        document.getElementById('attendancePreview').style.display = 'none';
+        document.getElementById('attendanceDate').value = new Date().toISOString().split('T')[0];
+    });
+</script>
+{% endblock %}
