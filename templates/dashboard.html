@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Attendance & Salary Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4 text-center mb-4">
+            <i class="fas fa-tachometer-alt text-primary me-3"></i>
+            Dashboard
+        </h1>
+        <p class="lead text-center text-muted">Welcome to your Attendance & Salary Management System</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-4 text-primary mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h5 class="card-title">Total Employees</h5>
+                <h2 class="text-primary" id="totalEmployees">{{ employees|length }}</h2>
+                <a href="{{ url_for('employees') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>View All
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-4 text-success mb-3">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h5 class="card-title">Today's Attendance</h5>
+                <h2 class="text-success" id="todayAttendance">-</h2>
+                <a href="{{ url_for('attendance') }}" class="btn btn-outline-success">
+                    <i class="fas fa-plus me-1"></i>Mark Attendance
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-4 text-warning mb-3">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h5 class="card-title">First Shift</h5>
+                <p class="text-muted mb-1">10:00 AM - 02:00 PM</p>
+                <h6 class="text-warning" id="firstShiftCount">{{ employees.values() | selectattr('shift_type', 'equalto', 'First') | list | length }} Employees</h6>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-4 text-info mb-3">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <h5 class="card-title">Second Shift</h5>
+                <p class="text-muted mb-1">02:00 PM - 07:00 PM</p>
+                <h6 class="text-info" id="secondShiftCount">{{ employees.values() | selectattr('shift_type', 'equalto', 'Second') | list | length }} Employees</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    Quick Import
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary" onclick="showImportModal('employees')">
+                                <i class="fas fa-users me-2"></i>
+                                Import Employees
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-success" onclick="showImportModal('attendance')">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                Import Attendance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-download me-2"></i>
+                    Quick Export
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{{ url_for('export_excel', export_type='employees') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-users me-1"></i>
+                                Employees
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{{ url_for('export_excel', export_type='attendance') }}" class="btn btn-outline-success">
+                                <i class="fas fa-calendar me-1"></i>
+                                Attendance
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <a href="{{ url_for('export_excel', export_type='salary') }}" class="btn btn-outline-warning">
+                                <i class="fas fa-money-bill me-1"></i>
+                                Salary
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-bar display-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">Activity tracking coming soon...</h5>
+                    <p class="text-muted">Employee attendance and salary calculations will be displayed here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Select Excel File</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls" required>
+                        <div class="form-text">
+                            <strong>Required columns:</strong>
+                            <div id="requiredColumns"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="importType" name="import_type">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="spinner-border spinner-border-sm me-2" style="display: none;"></span>
+                        <span class="button-text">Import</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showImportModal(type) {
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        const importType = document.getElementById('importType');
+        const requiredColumns = document.getElementById('requiredColumns');
+        const modalTitle = document.querySelector('#importModal .modal-title');
+        
+        importType.value = type;
+        
+        if (type === 'employees') {
+            modalTitle.textContent = 'Import Employees';
+            requiredColumns.innerHTML = '<small class="text-muted">Employee ID, Employee Name, Shift Type, Monthly Salary</small>';
+        } else if (type === 'attendance') {
+            modalTitle.textContent = 'Import Attendance';
+            requiredColumns.innerHTML = '<small class="text-muted">Employee ID, Date, Arrival Time</small>';
+        }
+        
+        modal.show();
+    }
+
+    document.getElementById('importForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.querySelector('.button-text').textContent;
+        
+        showLoading(submitBtn);
+        
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('/import_excel', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                location.reload();
+            } else {
+                showAlert(result.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('An error occurred while importing data.', 'danger');
+        } finally {
+            hideLoading(submitBtn, originalText);
+        }
+    });
+
+    // Load today's attendance count
+    async function loadTodayAttendance() {
+        const today = new Date().toISOString().split('T')[0];
+        // This would require an API endpoint to get today's attendance count
+        // For now, we'll show a placeholder
+        document.getElementById('todayAttendance').textContent = '-';
+    }
+
+    // Load attendance data on page load
+    document.addEventListener('DOMContentLoaded', loadTodayAttendance);
+</script>
+{% endblock %}

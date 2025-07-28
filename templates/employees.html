@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Employees - Attendance & Salary Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5">
+            <i class="fas fa-users text-primary me-3"></i>
+            Employee Management
+        </h1>
+        <p class="lead text-muted">Manage employee information and shift assignments</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+            <i class="fas fa-plus me-2"></i>
+            Add Employee
+        </button>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h3 class="text-primary">{{ employees|length }}</h3>
+                <p class="text-muted mb-0">Total Employees</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h3 class="text-warning">{{ employees.values() | selectattr('shift_type', 'equalto', 'First') | list | length }}</h3>
+                <p class="text-muted mb-0">First Shift</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h3 class="text-info">{{ employees.values() | selectattr('shift_type', 'equalto', 'Second') | list | length }}</h3>
+                <p class="text-muted mb-0">Second Shift</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h3 class="text-success">₹{{ "%.0f"|format(employees.values() | map(attribute='monthly_salary') | sum) }}</h3>
+                <p class="text-muted mb-0">Total Salary</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Employee List
+        </h5>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search employees..." style="width: 200px;">
+            <select class="form-select form-select-sm" id="shiftFilter" style="width: 150px;">
+                <option value="">All Shifts</option>
+                <option value="First">First Shift</option>
+                <option value="Second">Second Shift</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if employees %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="employeeTable">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Shift Type</th>
+                        <th>Shift Timing</th>
+                        <th>Monthly Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp_id, emp_data in employees.items() %}
+                    <tr>
+                        <td><strong>{{ emp_id }}</strong></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-2">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        {{ emp_data.name[0].upper() }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold">{{ emp_data.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if emp_data.shift_type == 'First' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ emp_data.shift_type }} Shift
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {% if emp_data.shift_type == 'First' %}
+                                    10:00 AM - 02:00 PM
+                                {% else %}
+                                    02:00 PM - 07:00 PM
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-success">₹{{ "%.0f"|format(emp_data.monthly_salary) }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editEmployee('{{ emp_id }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-success" onclick="viewAttendance('{{ emp_id }}')">
+                                    <i class="fas fa-calendar-check"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="calculateSalary('{{ emp_id }}')">
+                                    <i class="fas fa-money-bill"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users display-1 text-muted mb-3"></i>
+            <h5 class="text-muted">No employees found</h5>
+            <p class="text-muted">Add your first employee to get started.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                <i class="fas fa-plus me-2"></i>
+                Add Employee
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Employee Modal -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addEmployeeForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="empId" class="form-label">Employee ID *</label>
+                        <input type="text" class="form-control" id="empId" required>
+                        <div class="form-text">Unique identifier for the employee</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="empName" class="form-label">Employee Name *</label>
+                        <input type="text" class="form-control" id="empName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="shiftType" class="form-label">Shift Type *</label>
+                        <select class="form-select" id="shiftType" required>
+                            <option value="">Select Shift</option>
+                            <option value="First">First Shift (10:00 AM - 02:00 PM)</option>
+                            <option value="Second">Second Shift (02:00 PM - 07:00 PM)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="monthlySalary" class="form-label">Monthly Salary (₹) *</label>
+                        <input type="number" class="form-control" id="monthlySalary" min="0" step="100" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="spinner-border spinner-border-sm me-2" style="display: none;"></span>
+                        <span class="button-text">Add Employee</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Search and filter functionality
+    document.getElementById('searchInput').addEventListener('input', filterTable);
+    document.getElementById('shiftFilter').addEventListener('change', filterTable);
+
+    function filterTable() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const shiftFilter = document.getElementById('shiftFilter').value;
+        const table = document.getElementById('employeeTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        for (let row of rows) {
+            const empId = row.cells[0].textContent.toLowerCase();
+            const empName = row.cells[1].textContent.toLowerCase();
+            const shiftType = row.cells[2].textContent;
+            
+            const matchesSearch = empId.includes(searchTerm) || empName.includes(searchTerm);
+            const matchesShift = !shiftFilter || shiftType.includes(shiftFilter);
+            
+            row.style.display = matchesSearch && matchesShift ? '' : 'none';
+        }
+    }
+
+    // Add employee form submission
+    document.getElementById('addEmployeeForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.querySelector('.button-text').textContent;
+        
+        showLoading(submitBtn);
+        
+        const formData = {
+            emp_id: document.getElementById('empId').value,
+            name: document.getElementById('empName').value,
+            shift_type: document.getElementById('shiftType').value,
+            monthly_salary: parseFloat(document.getElementById('monthlySalary').value)
+        };
+        
+        try {
+            const response = await fetch('/add_employee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert(result.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addEmployeeModal')).hide();
+                location.reload();
+            } else {
+                showAlert(result.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('An error occurred while adding the employee.', 'danger');
+        } finally {
+            hideLoading(submitBtn, originalText);
+        }
+    });
+
+    function editEmployee(empId) {
+        showAlert('Edit functionality coming soon!', 'info');
+    }
+
+    function viewAttendance(empId) {
+        window.location.href = `/attendance?employee=${empId}`;
+    }
+
+    function calculateSalary(empId) {
+        window.location.href = `/salary?employee=${empId}`;
+    }
+
+    // Clear form when modal is hidden
+    document.getElementById('addEmployeeModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('addEmployeeForm').reset();
+    });
+</script>
+{% endblock %}
